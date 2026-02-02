@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import { MdDelete } from "react-icons/md";
 import { FaRegEdit } from "react-icons/fa";
 import { signOut, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 
 export default function ChatPage() {
  
   const router = useRouter();
-   
+  const params = useParams();
+  const routeChatId = params.chatId as string | undefined;
+
   interface Message{
     role: "ai" | "user";
     text:string;
@@ -37,14 +39,21 @@ export default function ChatPage() {
 
 
  useEffect(() => {
-  if (status === "authenticated" && !chatId) {
-    startNewChat();
-     showChatList();
-  }else{
-     router.push("/auth");
-
+  if (status === "unauthenticated") {
+    router.push("/auth");
+    return;
   }
-}, [status]);
+
+  if (status === "authenticated") {
+    showChatList();
+    
+  }
+
+  // If user clicked an existing chat
+  if (routeChatId) {
+    setChatId(routeChatId);
+  }
+}, [status, routeChatId]);
 
 
   const sendMessage = async () => {
@@ -152,7 +161,10 @@ if (chatId === deleteId) {
       text: "Hi 👋 I’m your AI Career Coach. How can I help you today?",
     },
   ])
+  showChatList();
   }
+
+
   const showChatList = async () => {
       const res = await fetch("/api/chat/list");
       if (!res.ok) return;
@@ -239,18 +251,29 @@ if (chatId === deleteId) {
         </button>
       <div className="border-t border-white/10 pt-4 flex gap-2">
         <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          placeholder="Type your message..."
-          className="flex-1 px-4 py-3 rounded-xl bg-black/40 border border-white/10 text-white outline-none"
+           value={input}
+  disabled={!chatId}
+  onChange={(e) => setInput(e.target.value)}
+  placeholder={
+    chatId
+      ? "Type your message..."
+      : "Click 'New Chat' to start chatting"
+  }
+  className={`flex-1 px-4 py-3 rounded-xl bg-black/40 border border-white/10 text-white outline-none ${
+    !chatId && "opacity-50 cursor-not-allowed"
+  }`}
         />
        
           
           <button
             onClick={sendMessage}
-            className="px-6 rounded-xl bg-orange-500 hover:bg-orange-600 text-black font-medium transition"
-          >
+             disabled={!chatId}
+            className={`px-6 rounded-xl font-medium transition ${
+    chatId
+      ? "bg-orange-500 hover:bg-orange-600 text-black"
+      : "bg-gray-500 text-gray-300 cursor-not-allowed"
+  }`}
+>
             Send
           </button>
         </div>
