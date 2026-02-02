@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { connectDB } from "@/lib/mongodb";
 import users from "@/models/users";
 import bcrypt from "bcryptjs";
